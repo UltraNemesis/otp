@@ -13,7 +13,7 @@ Go package for HOTP (RFC4226) and TOTP (RFC6238)
 
     secret, _ := otp.NewSecretWithSize(otp.SECERT_SIZE_32)
 
-##### Generate URI for HTOP (Counter value must be non-zero)
+##### Generate URI for HOTP (Counter value must be non-zero)
 
     hotpURI := otp.URI(secret, &otp.Options{
     	User:    "testuser",
@@ -21,7 +21,7 @@ Go package for HOTP (RFC4226) and TOTP (RFC6238)
     	Counter: 1,
     })
 
-##### Generate URI for HTOP (Counter value is always zero for TOTP)
+##### Generate URI for HOTP (Counter value is always zero for TOTP)
 
     totpURI := otp.URI(secret, &otp.Options{
     	User:   "testuser",
