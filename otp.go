@@ -20,6 +20,7 @@ import (
 
 type SecretSize uint8
 
+// Standard Secret sizes
 const (
 	SECRET_SIZE_16      SecretSize = 16
 	SECRET_SIZE_20      SecretSize = 20
@@ -31,6 +32,7 @@ const (
 
 type Digit uint8
 
+// Standard OTP Lengths
 const (
 	DIGITS_4   Digit = 4
 	DIGITS_6   Digit = 6
@@ -41,6 +43,7 @@ const (
 
 type Period uint8
 
+// Standard TOTP Periods
 const (
 	PERIOD_30 Period = 30
 	PERIOD_45 Period = 45
@@ -49,6 +52,7 @@ const (
 
 type Algorithm string
 
+// Standard Hashing Algorithms
 const (
 	SHA1   Algorithm = "sha1"
 	SHA256 Algorithm = "sha256"
@@ -89,12 +93,14 @@ type Options struct {
 	Algorithm Algorithm
 }
 
+// Generate a new secret of default size (20 bytes)
 func NewSecret() (secret string, err error) {
 	secret, err = NewSecretWithSize(SECRET_SIZE_DEFAULT)
 
 	return
 }
 
+// Generate a new secret of specified size. Mininum size is 16 bytes
 func NewSecretWithSize(size SecretSize) (secret string, err error) {
 	if size < SECRET_SIZE_MIN {
 		err = errors.New("Secret is too small")
@@ -111,36 +117,42 @@ func NewSecretWithSize(size SecretSize) (secret string, err error) {
 	return
 }
 
+// Generate a Time based OTP that is compatible with Google Authenticator
 func GOOGLE_TOTP(secret string) (otp string) {
 	otp = TOTP_SHA1(secret, time.Now(), PERIOD_30, DIGITS_6)
 
 	return
 }
 
+// Generate a Hmac based OTP that is compatible with Google Authenticator
 func GOOGLE_HOTP(secret string, counter uint64) (otp string) {
 	otp = HOTP_SHA1(secret, counter, DIGITS_6)
 
 	return
 }
 
+// Generate a Time based OTP using Sha1 as the Hashing Algorithm for HMac
 func TOTP_SHA1(secret string, timeStamp time.Time, period Period, length Digit) (otp string) {
 	otp = TOTP(sha1.New, secret, timeStamp, period, length)
 
 	return
 }
 
+// Generate a Hmac based OTP using Sha1 as the Hashing Algorithm for HMac
 func HOTP_SHA1(secret string, counter uint64, length Digit) (otp string) {
 	otp = HOTP(sha1.New, secret, counter, length)
 
 	return
 }
 
+// Generate a Time based OTP
 func TOTP(hasher func() hash.Hash, secret string, timeStamp time.Time, period Period, length Digit) (otp string) {
 	otp = HOTP(hasher, secret, uint64(timeStamp.Unix()/int64(period)), length)
 
 	return
 }
 
+// Generate a Hmac based OTP
 func HOTP(hasher func() hash.Hash, secret string, counter uint64, length Digit) (otp string) {
 	if length >= DIGITS_MIN && length <= DIGITS_MAX {
 		otp = compute(hasher, secret, counter, uint8(length))
@@ -149,6 +161,8 @@ func HOTP(hasher func() hash.Hash, secret string, counter uint64, length Digit) 
 	return
 }
 
+// Generate OATH URI compatible with Authenticator Apps. The format is documented
+// at https://github.com/google/google-authenticator/wiki/Key-Uri-Format
 func URI(secret string, options *Options) string {
 	values := url.Values{}
 	uri := url.URL{
@@ -188,6 +202,7 @@ func URI(secret string, options *Options) string {
 	return uri.String()
 }
 
+// Generate OATH URI and QR code compatible with Authenticator Apps.
 func QR(secret string, options *Options) (qrCode string, uri string, err error) {
 	uri = URI(secret, options)
 
@@ -202,6 +217,7 @@ func QR(secret string, options *Options) (qrCode string, uri string, err error) 
 	return
 }
 
+// Compute Hmac based OTP
 func compute(hasher func() hash.Hash, secret string, counter uint64, length uint8) (otp string) {
 	var code uint64 = 0
 
@@ -231,6 +247,7 @@ func compute(hasher func() hash.Hash, secret string, counter uint64, length uint
 	return
 }
 
+// Format the numeric OTP code into string with necessary 0 padding
 func otpformat(code uint64, length uint8) string {
 	codeStr := strconv.FormatUint(code, 10)
 
